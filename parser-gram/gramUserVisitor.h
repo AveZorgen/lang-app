@@ -81,7 +81,9 @@ public:
     {
         std::cout << "PostExpr" << std::endl;
         if (ctx->children.size() > 1) {
-            std::vector<int> args = std::any_cast<std::vector<int>>(visit(ctx->arg_list()));
+            if (ctx->arg_list()){
+                std::vector<int> args = std::any_cast<std::vector<int>>(visit(ctx->arg_list()));
+            }
             auto caller = std::any_cast<gramParser::CompstmContext*>(visit(ctx->primExp()));
             return visit(caller);
         } else {
@@ -181,7 +183,6 @@ public:
             std::any childResult = ctx->children[i]->accept(this);
         }
         return 42;
-        // return visitChildren(ctx);
     }
 
     virtual std::any visitStatement(gramParser::StatementContext *ctx) override
@@ -204,13 +205,16 @@ public:
         std::cout << "Funcdef" << std::endl;
         std::string funcname = ctx->ID()->getText();
         std::cout << "funcname: " << funcname << std::endl;
-        auto params = std::any_cast<std::vector<std::string>>(visit(ctx->param_list()));
-        std::cout << "prams: ";
-        for (auto param: params) {
-            std::cout << param << " ";
-            memory.insert({param, 0});
+        auto params = std::vector<std::string>();
+        if (ctx->param_list()){
+            params = std::any_cast<std::vector<std::string>>(visit(ctx->param_list()));
+            std::cout << "prams: ";
+            for (auto param: params) {
+                std::cout << param << " ";
+                memory.insert({param, 0});
+            }
+            std::cout << std::endl;
         }
-        std::cout << std::endl;
         functable.insert({funcname, ctx->compstm()});
         return params;
     }
