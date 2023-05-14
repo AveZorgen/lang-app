@@ -13,16 +13,15 @@ class  gramParser : public antlr4::Parser {
 public:
   enum {
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
-    T__7 = 8, T__8 = 9, T__9 = 10, ID = 11, NUMBER = 12, MUL = 13, DIV = 14, 
-    ADD = 15, SUB = 16, COM = 17, Whitespace = 18, Newline = 19, BlockComment = 20, 
-    LineComment = 21
+    T__7 = 8, ID = 9, NUMBER = 10, MUL = 11, DIV = 12, ADD = 13, SUB = 14, 
+    COM = 15, Whitespace = 16, Newline = 17, BlockComment = 18, LineComment = 19
   };
 
   enum {
-    RulePrimExp = 0, RulePostExpr = 1, RuleMulExpr = 2, RuleAddExpr = 3, 
-    RuleExpression = 4, RuleProgram = 5, RuleStatement_list = 6, RuleStatement = 7, 
-    RuleVardef = 8, RuleFuncdef = 9, RuleArg_list = 10, RuleCompstm = 11, 
-    RuleExprstm = 12, RuleRetstm = 13
+    RulePrimExp = 0, RulePostExpr = 1, RuleArg_list = 2, RuleMulExpr = 3, 
+    RuleAddExpr = 4, RuleExpression = 5, RuleProgram = 6, RuleStatement_list = 7, 
+    RuleStatement = 8, RuleVardef = 9, RuleFuncdef = 10, RuleParam_list = 11, 
+    RuleCompstm = 12, RuleExprstm = 13, RuleRetstm = 14
   };
 
   explicit gramParser(antlr4::TokenStream *input);
@@ -44,6 +43,7 @@ public:
 
   class PrimExpContext;
   class PostExprContext;
+  class Arg_listContext;
   class MulExprContext;
   class AddExprContext;
   class ExpressionContext;
@@ -52,7 +52,7 @@ public:
   class StatementContext;
   class VardefContext;
   class FuncdefContext;
-  class Arg_listContext;
+  class Param_listContext;
   class CompstmContext;
   class ExprstmContext;
   class RetstmContext; 
@@ -77,8 +77,7 @@ public:
     PostExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     PrimExpContext *primExp();
-    std::vector<ExpressionContext *> expression();
-    ExpressionContext* expression(size_t i);
+    Arg_listContext *arg_list();
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -87,8 +86,25 @@ public:
 
   PostExprContext* postExpr();
 
+  class  Arg_listContext : public antlr4::ParserRuleContext {
+  public:
+    Arg_listContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    std::vector<AddExprContext *> addExpr();
+    AddExprContext* addExpr(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> COM();
+    antlr4::tree::TerminalNode* COM(size_t i);
+
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  Arg_listContext* arg_list();
+
   class  MulExprContext : public antlr4::ParserRuleContext {
   public:
+    antlr4::Token *op = nullptr;
     MulExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     std::vector<PostExprContext *> postExpr();
@@ -107,6 +123,7 @@ public:
 
   class  AddExprContext : public antlr4::ParserRuleContext {
   public:
+    antlr4::Token *op = nullptr;
     AddExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     std::vector<MulExprContext *> mulExpr();
@@ -204,7 +221,7 @@ public:
     virtual size_t getRuleIndex() const override;
     antlr4::tree::TerminalNode *ID();
     CompstmContext *compstm();
-    Arg_listContext *arg_list();
+    Param_listContext *param_list();
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -213,9 +230,9 @@ public:
 
   FuncdefContext* funcdef();
 
-  class  Arg_listContext : public antlr4::ParserRuleContext {
+  class  Param_listContext : public antlr4::ParserRuleContext {
   public:
-    Arg_listContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    Param_listContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     std::vector<antlr4::tree::TerminalNode *> ID();
     antlr4::tree::TerminalNode* ID(size_t i);
@@ -227,7 +244,7 @@ public:
    
   };
 
-  Arg_listContext* arg_list();
+  Param_listContext* param_list();
 
   class  CompstmContext : public antlr4::ParserRuleContext {
   public:

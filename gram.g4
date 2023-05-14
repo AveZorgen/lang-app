@@ -5,11 +5,13 @@ primExp: '(' expression ')'
     | NUMBER
     ;
 
-postExpr: primExp ( '[' expression ']' | '(' expression? ')' )*;
+postExpr: primExp ( '(' arg_list? ')' )?;
 
-mulExpr: postExpr ((MUL| DIV) postExpr )*;
+arg_list: addExpr (COM addExpr)*;
 
-addExpr: mulExpr ((ADD| SUB) mulExpr )*;
+mulExpr: postExpr (op=(MUL| DIV) postExpr )*;
+
+addExpr: mulExpr (op=(ADD| SUB) mulExpr )*;
 
 expression: addExpr (COM addExpr)*;
 
@@ -26,9 +28,9 @@ statement: vardef
 
 vardef: ID '=' expression ';';
 
-funcdef: 'func' ID '(' arg_list? ')' compstm;
+funcdef: 'func' ID '(' param_list? ')' compstm;
 
-arg_list: ID (',' ID)*;
+param_list: ID (',' ID)*;
 
 compstm: '{' statement_list? '}';
 

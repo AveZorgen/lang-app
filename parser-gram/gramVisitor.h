@@ -23,6 +23,8 @@ public:
 
     virtual std::any visitPostExpr(gramParser::PostExprContext *context) = 0;
 
+    virtual std::any visitArg_list(gramParser::Arg_listContext *context) = 0;
+
     virtual std::any visitMulExpr(gramParser::MulExprContext *context) = 0;
 
     virtual std::any visitAddExpr(gramParser::AddExprContext *context) = 0;
@@ -39,7 +41,7 @@ public:
 
     virtual std::any visitFuncdef(gramParser::FuncdefContext *context) = 0;
 
-    virtual std::any visitArg_list(gramParser::Arg_listContext *context) = 0;
+    virtual std::any visitParam_list(gramParser::Param_listContext *context) = 0;
 
     virtual std::any visitCompstm(gramParser::CompstmContext *context) = 0;
 

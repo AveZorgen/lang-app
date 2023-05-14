@@ -6,13 +6,24 @@
 #include <vector>
 #include <stack>
 #include <map>
+#include <algorithm>
 
 class gramUserVisitor : public gramBaseVisitor
 {
+private:
+    struct
+    {
+        bool operator()(antlr4::tree::TerminalNode * a, antlr4::tree::TerminalNode * b) const {
+             return a->getSymbol()->getTokenIndex() < b->getSymbol()->getTokenIndex(); 
+        }
+    }
+    byIndex;
+
 public:
     std::vector<int> res;
     std::stack<int> stk;
     std::map<std::string, int> memory;
+    std::map<std::string, gramParser::CompstmContext*> functable;
 
     // std::any visitChildren(antlr4::tree::ParseTree *node) override
     // {
@@ -35,9 +46,7 @@ public:
 
     std::any visitTerminal(antlr4::tree::TerminalNode *node) override
     {
-        std::cout << "TErm1 " << node->getSymbol()->getText() << std::endl;
-        std::cout << "TErm2 " << node->getSymbol()->getType() << std::endl;
-        std::cout << "TErm3 " << node->getSymbol()->toString() << std::endl;
+        std::cout << "Terminal " << node->getSymbol()->toString() << std::endl;
         return node->getSymbol();
     }
 
@@ -52,95 +61,105 @@ public:
         auto ctx_val = ctx->NUMBER();
         if (ctx_val)
         {
-            std::cout << ctx_val->getText() << std::endl;
-            stk.push(std::stoi(ctx_val->getText()));
+            std::cout << "NUMBER: " << ctx_val->getText() << std::endl;
+            return std::stoi(ctx_val->getText());
         }
-        else if (ctx_val = ctx->ID())
+        else if (ctx_val = ctx->ID()) // либо функция либо переменная
         {
-            std::cout << ctx_val->getText() << std::endl;
-            stk.push(memory[ctx_val->getText()]);
-        }
-        return visitChildren(ctx);
+            std::string text = ctx_val->getText();
+            std::cout << "ID: " << text << std::endl;
+            if (functable.count(text)) {
+                return functable[text];
+            } else {
+                return memory[text];
+            }
+        } 
+        return visit(ctx->expression());
     }
 
     virtual std::any visitPostExpr(gramParser::PostExprContext *ctx) override
     {
         std::cout << "PostExpr" << std::endl;
-        return visitChildren(ctx);
+        if (ctx->children.size() > 1) {
+            std::vector<int> args = std::any_cast<std::vector<int>>(visit(ctx->arg_list()));
+            auto caller = std::any_cast<gramParser::CompstmContext*>(visit(ctx->primExp()));
+            return visit(caller);
+        } else {
+            return visit(ctx->primExp());
+        }
+    }
+
+    virtual std::any visitArg_list(gramParser::Arg_listContext *ctx) override
+    {
+        std::cout << "Arg_list" << std::endl;
+        auto addExprs = ctx->addExpr();
+        std::vector<int> operands;
+        for (auto expr: addExprs) {
+            operands.push_back(std::any_cast<int>(visit(expr)));
+        }
+        return operands;
     }
 
     virtual std::any visitMulExpr(gramParser::MulExprContext *ctx) override
     {
         std::cout << "MulExpr" << std::endl;
-        visitChildren(ctx);
-        size_t n = ctx->children.size() / 2 + 1;
-        int midRes = stk.top();
-        stk.pop();
-        for (size_t i = 0; i < n - 1; i++)
-        {
-            midRes *= stk.top();
-            stk.pop();
+        size_t n = ctx->children.size();
+
+        auto postExpr = ctx->postExpr();
+        auto mul = ctx->MUL();
+        auto div = ctx->DIV();
+        auto operators(mul);
+        operators.insert(operators.end(), div.begin(), div.end());
+        std::sort(operators.begin(), operators.end(), byIndex);
+
+        int res = std::any_cast<int>(visit(postExpr[0]));
+        for (size_t i = 1; i < n/2+1; i++){
+            auto op = std::any_cast<antlr4::Token *>(visit(operators[i-1]));
+            if (op->getType() == gramParser::MUL){
+                res *= std::any_cast<int>(visit(postExpr[i]));
+            } else {
+                res /= std::any_cast<int>(visit(postExpr[i]));
+            }
         }
-        stk.push(midRes);
-        return midRes;
+        std::cout << "MulExprRes: " << res << std::endl;
+        return res;
     }
 
     virtual std::any visitAddExpr(gramParser::AddExprContext *ctx) override
     {
         std::cout << "AddExpr" << std::endl;
-
-        // visitChildren(ctx);
         size_t n = ctx->children.size();
-        for (size_t i = 0; i < n; i++)
-        {
-            std::cout << "Child: " << ctx->children[i]->getText() << std::endl;
-            std::cout << "ADD: " << gramParser::ADD << " SUB: " << gramParser::SUB << std::endl;
-            std::any childResult = ctx->children[i]->accept(this);
-            switch (ctx->children[i]->getTreeType())
-            {
-            case antlr4::tree::ParseTreeType::TERMINAL:
-            {
-                auto termToken = std::any_cast<antlr4::Token *>(childResult);
-                std::cout << "ChildRes: " << termToken->getType() << std::endl;
-                break;
-            }
-            case antlr4::tree::ParseTreeType::RULE:
-            {
-                std::cout << "ChildRes: " << std::any_cast<int>(childResult) << std::endl;
-                break;
-            }
-            default:
-                std::cout << "ChildRes: "
-                          << "Error" << std::endl;
-            }
-        }
 
-        // size_t n = ctx->children.size() / 2 + 1;
-        n = n / 2 + 1;
-        int midRes = stk.top();
-        stk.pop();
-        for (size_t i = 0; i < n - 1; i++)
-        {
-            midRes += stk.top();
-            stk.pop();
+        auto mulExprs = ctx->mulExpr();
+        auto add = ctx->ADD();
+        auto sub = ctx->SUB();
+        auto operators(add);
+        operators.insert(operators.end(), sub.begin(), sub.end());
+        std::sort(operators.begin(), operators.end(), byIndex);
+
+        int res = std::any_cast<int>(visit(mulExprs[0]));
+        for (size_t i = 1; i < n/2+1; i++){
+            auto op = std::any_cast<antlr4::Token *>(visit(operators[i-1]));
+            if (op->getType() == gramParser::ADD){
+                res += std::any_cast<int>(visit(mulExprs[i]));
+            } else {
+                res -= std::any_cast<int>(visit(mulExprs[i]));
+            }
         }
-        stk.push(midRes);
-        return midRes;
+        std::cout << "AddExprRes: " << res << std::endl;
+        return res;
     }
 
     virtual std::any visitExpression(gramParser::ExpressionContext *ctx) override
     {
         std::cout << "Expression" << std::endl;
-        visitChildren(ctx);
-        size_t n = ctx->children.size() / 2 + 1;
-        int midRes = stk.top();
-        stk.pop();
-        for (size_t i = 0; i < n - 1; i++)
-        {
-            stk.pop();
+        auto addExprs = ctx->addExpr();
+        std::vector<int> operands;
+        for (auto expr: addExprs) {
+            int val = std::any_cast<int>(visit(expr));
+            operands.push_back(val);
         }
-        stk.push(midRes);
-        return midRes;
+        return operands.back();
     }
 
     virtual std::any visitProgram(gramParser::ProgramContext *ctx) override
@@ -153,7 +172,16 @@ public:
     virtual std::any visitStatement_list(gramParser::Statement_listContext *ctx) override
     {
         std::cout << "Statement_list" << std::endl;
-        return visitChildren(ctx);
+        size_t n = ctx->children.size();
+        for (size_t i = 0; i < n; i++)
+        {
+            if (ctx->statement(i)->retstm()) {
+                return visit(ctx->statement(i)->retstm());
+            }
+            std::any childResult = ctx->children[i]->accept(this);
+        }
+        return 42;
+        // return visitChildren(ctx);
     }
 
     virtual std::any visitStatement(gramParser::StatementContext *ctx) override
@@ -167,38 +195,47 @@ public:
         std::cout << "Vardef" << std::endl;
         int val = std::any_cast<int>(visit(ctx->expression()));
         memory.insert({ctx->ID()->getText(), val});
-        // visitChildren(ctx);
-        // int val = stk.top();
-        stk.pop();
         res.push_back(val);
-        // return val;
         return val;
     }
 
     virtual std::any visitFuncdef(gramParser::FuncdefContext *ctx) override
     {
         std::cout << "Funcdef" << std::endl;
-        return visitChildren(ctx);
+        std::string funcname = ctx->ID()->getText();
+        std::cout << "funcname: " << funcname << std::endl;
+        auto params = std::any_cast<std::vector<std::string>>(visit(ctx->param_list()));
+        std::cout << "prams: ";
+        for (auto param: params) {
+            std::cout << param << " ";
+            memory.insert({param, 0});
+        }
+        std::cout << std::endl;
+        functable.insert({funcname, ctx->compstm()});
+        return params;
     }
 
-    virtual std::any visitArg_list(gramParser::Arg_listContext *ctx) override
+    virtual std::any visitParam_list(gramParser::Param_listContext *ctx) override
     {
-        std::cout << "Arg_list" << std::endl;
-        return visitChildren(ctx);
+        std::cout << "Param_list" << std::endl;
+        auto params = ctx->ID();
+        std::vector<std::string> names;
+        for (auto param: params) {
+            names.push_back(param->getText());
+        }
+        return names;
     }
 
     virtual std::any visitCompstm(gramParser::CompstmContext *ctx) override
     {
         std::cout << "Compstm" << std::endl;
-        return visitChildren(ctx);
+        return visit(ctx->statement_list());
     }
 
     virtual std::any visitExprstm(gramParser::ExprstmContext *ctx) override
     {
         std::cout << "Exprstm" << std::endl;
-        visitChildren(ctx);
-        int val = stk.top();
-        stk.pop();
+        int val = std::any_cast<int>(visit(ctx->expression()));
         res.push_back(val);
         return val;
     }
@@ -206,6 +243,6 @@ public:
     virtual std::any visitRetstm(gramParser::RetstmContext *ctx) override
     {
         std::cout << "Retstm" << std::endl;
-        return visitChildren(ctx);
+        return visit(ctx->expression());
     }
 };

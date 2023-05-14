@@ -23,6 +23,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual std::any visitArg_list(gramParser::Arg_listContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual std::any visitMulExpr(gramParser::MulExprContext *ctx) override {
     return visitChildren(ctx);
   }
@@ -55,7 +59,7 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual std::any visitArg_list(gramParser::Arg_listContext *ctx) override {
+  virtual std::any visitParam_list(gramParser::Param_listContext *ctx) override {
     return visitChildren(ctx);
   }
 

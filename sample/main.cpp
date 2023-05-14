@@ -16,7 +16,7 @@ int main()
     }
 
     Gram grm;
-    res = grm.eval("a = 2 - (3*2); b = 12 / a;");
+    res = grm.eval(expression + ";");
     i = 0;
     for (auto var: res)
     {
