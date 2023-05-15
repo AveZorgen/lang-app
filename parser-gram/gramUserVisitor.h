@@ -74,7 +74,7 @@ public:
             std::string text = ctx_val->getText();
             std::cout << "ID: " << text << std::endl;
             if (functable.count(text)) {
-                return text;
+                return functable[text];
             } else {
                 return memory[text];
             }
@@ -82,8 +82,8 @@ public:
         return visit(ctx->expression());
     }
 
-    std::any call_func(std::string func_name, std::vector<int> args) {
-        auto callinfo = functable[func_name];
+    std::any call_func(callable callinfo, std::vector<int> args) {
+        // auto callinfo = functable[func_name];
         auto compstm = callinfo.executable;
         auto params = callinfo.params;
         size_t i = 0;
@@ -102,7 +102,7 @@ public:
             if (ctx->arg_list()){
                 args = std::any_cast<std::vector<int>>(visit(ctx->arg_list()));
             }
-            std::string caller = std::any_cast<std::string>(visit(ctx->primExp()));
+            callable caller = std::any_cast<callable>(visit(ctx->primExp()));
             return call_func(caller, args);
         } else {
             return visit(ctx->primExp());
@@ -265,6 +265,9 @@ public:
     virtual std::any visitRetstm(gramParser::RetstmContext *ctx) override
     {
         std::cout << "Retstm" << std::endl;
-        return visit(ctx->expression());
+        if (ctx->expression())
+            return visit(ctx->expression());
+        else
+            return defaultResult();
     }
 };
