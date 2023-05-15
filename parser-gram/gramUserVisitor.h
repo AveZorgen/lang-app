@@ -8,6 +8,12 @@
 #include <map>
 #include <algorithm>
 
+#ifdef TRACE
+#define VISIT(NODE) std::cout << NODE << std::endl;
+#else
+#define VISIT(NODE) 
+#endif
+
 class gramUserVisitor : public gramBaseVisitor
 {
 private:
@@ -31,13 +37,13 @@ public:
 
     std::any visitTerminal(antlr4::tree::TerminalNode *node) override
     {
-        std::cout << "Terminal " << node->getSymbol()->toString() << std::endl;
+        std::cout << "Terminal " << node->getText() << std::endl;
         return node->getSymbol();
     }
 
     virtual std::any visitPrimExp(gramParser::PrimExpContext *ctx) override
     {
-        std::cout << "PrimExp" << std::endl;
+        VISIT("PrimExp")
         auto ctx_val = ctx->NUMBER();
         if (ctx_val)
         {
@@ -90,7 +96,7 @@ public:
 
     virtual std::any visitPostExpr(gramParser::PostExprContext *ctx) override
     {
-        std::cout << "PostExpr" << std::endl;
+        VISIT("PostExpr")
         if (ctx->children.size() > 1) {
             std::vector<int> args;
             if (ctx->arg_list()){
@@ -105,7 +111,7 @@ public:
 
     virtual std::any visitArg_list(gramParser::Arg_listContext *ctx) override
     {
-        std::cout << "Arg_list" << std::endl;
+        VISIT("Arg_list")
         auto addExprs = ctx->addExpr();
         std::vector<int> operands;
         for (auto expr: addExprs) {
@@ -116,7 +122,7 @@ public:
 
     virtual std::any visitMulExpr(gramParser::MulExprContext *ctx) override
     {
-        std::cout << "MulExpr" << std::endl;
+        VISIT("MulExpr")
         size_t n = ctx->children.size();
 
         auto postExpr = ctx->postExpr();
@@ -141,7 +147,7 @@ public:
 
     virtual std::any visitAddExpr(gramParser::AddExprContext *ctx) override
     {
-        std::cout << "AddExpr" << std::endl;
+        VISIT("AddExpr")
         size_t n = ctx->children.size();
 
         auto mulExprs = ctx->mulExpr();
@@ -166,7 +172,7 @@ public:
 
     virtual std::any visitExpression(gramParser::ExpressionContext *ctx) override
     {
-        std::cout << "Expression" << std::endl;
+        VISIT("Expression")
         auto addExprs = ctx->addExpr();
         std::vector<int> operands;
         for (auto expr: addExprs) {
@@ -178,14 +184,14 @@ public:
 
     virtual std::any visitProgram(gramParser::ProgramContext *ctx) override
     {
-        std::cout << "Program" << std::endl;
+       VISIT("Program")
         visitChildren(ctx);
         return &res;
     }
 
     virtual std::any visitStatement_list(gramParser::Statement_listContext *ctx) override
     {
-        std::cout << "Statement_list" << std::endl;
+        VISIT("Statement_list")
         size_t n = ctx->children.size();
         for (size_t i = 0; i < n; i++)
         {
@@ -199,13 +205,13 @@ public:
 
     virtual std::any visitStatement(gramParser::StatementContext *ctx) override
     {
-        std::cout << "Statement" << std::endl;
+        VISIT("Statement")
         return visitChildren(ctx);
     }
 
     virtual std::any visitVardef(gramParser::VardefContext *ctx) override
     {
-        std::cout << "Vardef" << std::endl;
+        VISIT("Vardef")
         int val = std::any_cast<int>(visit(ctx->expression()));
         memory.insert({ctx->ID()->getText(), val});
         res.push_back(val);
@@ -214,7 +220,7 @@ public:
 
     virtual std::any visitFuncdef(gramParser::FuncdefContext *ctx) override
     {
-        std::cout << "Funcdef" << std::endl;
+        VISIT("Funcdef")
         std::string funcname = ctx->ID()->getText();
         std::cout << "funcname: " << funcname << std::endl;
         auto params = std::vector<std::string>();
@@ -223,7 +229,6 @@ public:
             std::cout << "prams: ";
             for (auto param: params) {
                 std::cout << param << " ";
-                memory.insert({param, 0});
             }
             std::cout << std::endl;
         }
@@ -233,7 +238,7 @@ public:
 
     virtual std::any visitParam_list(gramParser::Param_listContext *ctx) override
     {
-        std::cout << "Param_list" << std::endl;
+        VISIT("Param_list")
         auto params = ctx->ID();
         std::vector<std::string> names;
         for (auto param: params) {
@@ -244,13 +249,13 @@ public:
 
     virtual std::any visitCompstm(gramParser::CompstmContext *ctx) override
     {
-        std::cout << "Compstm" << std::endl;
+        VISIT("Compstm")
         return visit(ctx->statement_list());
     }
 
     virtual std::any visitExprstm(gramParser::ExprstmContext *ctx) override
     {
-        std::cout << "Exprstm" << std::endl;
+        VISIT("Exprstm")
         int val = std::any_cast<int>(visit(ctx->expression()));
         res.push_back(val);
         return val;
@@ -258,7 +263,7 @@ public:
 
     virtual std::any visitRetstm(gramParser::RetstmContext *ctx) override
     {
-        std::cout << "Retstm" << std::endl;
+        VISIT("Retstm")
         if (ctx->expression())
             return visit(ctx->expression());
         else
