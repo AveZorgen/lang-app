@@ -230,7 +230,9 @@ public:
     virtual std::any visitProgram(gramParser::ProgramContext *ctx) override
     {
         VISIT("Program")
-        visitChildren(ctx);
+        auto statements = ctx->statement_list();
+        if (statements)
+            visit(statements);
         return &console;
     }
 
@@ -299,22 +301,30 @@ public:
     virtual std::any visitCompstm(gramParser::CompstmContext *ctx) override
     {
         VISIT("Compstm")
-        return visit(ctx->statement_list());
+        auto stlist = ctx->statement_list();
+        if (stlist)
+            return visit(stlist);
+        return defaultResult();
     }
 
     virtual std::any visitExprstm(gramParser::ExprstmContext *ctx) override
     {
         VISIT("Exprstm")
-        int val = std::any_cast<int>(visit(ctx->expression()));
-        res.push_back(val);
-        return val;
+        auto expr = ctx->expression();
+        if (expr){
+            int val = std::any_cast<int>(visit(ctx->expression()));
+            res.push_back(val);
+            return val;
+        }
+        return defaultResult();
     }
 
     virtual std::any visitRetstm(gramParser::RetstmContext *ctx) override
     {
         VISIT("Retstm")
-        if (ctx->expression())
-            return visit(ctx->expression());
+        auto expr = ctx->expression();
+        if (expr)
+            return visit(expr);
         else
             return defaultResult();
     }
