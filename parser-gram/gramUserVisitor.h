@@ -248,7 +248,7 @@ public:
             }
             std::any childResult = visit(ctx->children[i]);
         }
-        return defaultResult();
+        return 0;
     }
 
     virtual std::any visitStatement(gramParser::StatementContext *ctx) override
