@@ -18,12 +18,17 @@ private:
         }
     }
     byIndex;
+    struct callable
+    {
+        gramParser::CompstmContext* executable;
+        std::vector<std::string> params;
+    };
 
 public:
     std::vector<int> res;
     std::stack<int> stk;
     std::map<std::string, int> memory;
-    std::map<std::string, gramParser::CompstmContext*> functable;
+    std::map<std::string, callable> functable;
 
     // std::any visitChildren(antlr4::tree::ParseTree *node) override
     // {
@@ -69,7 +74,7 @@ public:
             std::string text = ctx_val->getText();
             std::cout << "ID: " << text << std::endl;
             if (functable.count(text)) {
-                return functable[text];
+                return text;
             } else {
                 return memory[text];
             }
@@ -77,15 +82,28 @@ public:
         return visit(ctx->expression());
     }
 
+    std::any call_func(std::string func_name, std::vector<int> args) {
+        auto callinfo = functable[func_name];
+        auto compstm = callinfo.executable;
+        auto params = callinfo.params;
+        size_t i = 0;
+        for (auto param: params){
+            memory[param] = args[i++];
+        }
+         
+        return visit(compstm);
+    }
+
     virtual std::any visitPostExpr(gramParser::PostExprContext *ctx) override
     {
         std::cout << "PostExpr" << std::endl;
         if (ctx->children.size() > 1) {
+            std::vector<int> args;
             if (ctx->arg_list()){
-                std::vector<int> args = std::any_cast<std::vector<int>>(visit(ctx->arg_list()));
+                args = std::any_cast<std::vector<int>>(visit(ctx->arg_list()));
             }
-            auto caller = std::any_cast<gramParser::CompstmContext*>(visit(ctx->primExp()));
-            return visit(caller);
+            std::string caller = std::any_cast<std::string>(visit(ctx->primExp()));
+            return call_func(caller, args);
         } else {
             return visit(ctx->primExp());
         }
@@ -215,7 +233,7 @@ public:
             }
             std::cout << std::endl;
         }
-        functable.insert({funcname, ctx->compstm()});
+        functable.insert({funcname, {ctx->compstm(), params}});
         return params;
     }
 

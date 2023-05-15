@@ -16,7 +16,7 @@ int main()
     }
 
     Gram grm;
-    res = grm.eval("func f() { a = z + 3; return a * 2; } z = 2 * 4; b = f();");
+    res = grm.eval("func f(x,y) { a = x + y; return a * 2; } z = 2 * 4; b = f(z, 3);");
     i = 0;
     for (auto var: res)
     {
