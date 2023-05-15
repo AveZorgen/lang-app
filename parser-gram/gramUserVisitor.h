@@ -113,6 +113,12 @@ public:
             console += "\n";
             return args.front();
         }
+        else if (name == "input")
+        {
+            int inp;
+            std::cin >> inp;
+            return inp;
+        }
         else
         {
             return defaultResult();
@@ -238,9 +244,9 @@ public:
             {
                 return visit(ctx->statement(i)->retstm());
             }
-            std::any childResult = ctx->children[i]->accept(this);
+            std::any childResult = visit(ctx->children[i]);
         }
-        return 42;
+        return defaultResult();
     }
 
     virtual std::any visitStatement(gramParser::StatementContext *ctx) override
