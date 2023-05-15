@@ -39,7 +39,7 @@ exprstm: expression? ';';
 
 retstm: 'return' expression? ';';
 
-PREDEF: OUT | IN;
+PREDEF: OUT | OUTLN | IN;
 ID: [a-zA-Z_][a-zA-Z0-9_]*;
 NUMBER: '-'? [0-9]+ ('.' [0-9]+)?;
 MUL: '*';
@@ -48,6 +48,7 @@ ADD: '+';
 SUB: '-';
 COM: ',';
 OUT: 'print';
+OUTLN: 'println';
 IN: 'input';
 
 Whitespace

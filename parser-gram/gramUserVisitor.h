@@ -11,7 +11,7 @@
 #ifdef TRACE
 #define VISIT(NODE) std::cout << NODE << std::endl;
 #else
-#define VISIT(NODE) 
+#define VISIT(NODE)
 #endif
 
 class gramUserVisitor : public gramBaseVisitor
@@ -19,14 +19,14 @@ class gramUserVisitor : public gramBaseVisitor
 private:
     struct
     {
-        bool operator()(antlr4::tree::TerminalNode * a, antlr4::tree::TerminalNode * b) const {
-             return a->getSymbol()->getTokenIndex() < b->getSymbol()->getTokenIndex(); 
+        bool operator()(antlr4::tree::TerminalNode *a, antlr4::tree::TerminalNode *b) const
+        {
+            return a->getSymbol()->getTokenIndex() < b->getSymbol()->getTokenIndex();
         }
-    }
-    byIndex;
+    } byIndex;
     struct callable
     {
-        gramParser::CompstmContext* executable;
+        gramParser::CompstmContext *executable;
         std::vector<std::string> params;
     };
 
@@ -34,6 +34,7 @@ public:
     std::vector<int> res;
     std::map<std::string, int> memory;
     std::map<std::string, callable> functable;
+    std::string console;
 
     std::any visitTerminal(antlr4::tree::TerminalNode *node) override
     {
@@ -54,9 +55,12 @@ public:
         {
             std::string text = ctx_val->getText();
             std::cout << "ID: " << text << std::endl;
-            if (functable.count(text)) {
+            if (functable.count(text))
+            {
                 return functable[text];
-            } else {
+            }
+            else
+            {
                 return memory[text];
             }
         }
@@ -64,8 +68,9 @@ public:
         {
             std::string text = ctx_val->getText();
             std::cout << "PREDEF: " << text << std::endl;
-            if (!functable.count(text)) {
-                std::vector<std::string> params {text};
+            if (!functable.count(text))
+            {
+                std::vector<std::string> params{text};
                 functable.insert({text, {nullptr, params}});
             }
             return functable[text];
@@ -73,23 +78,43 @@ public:
         return visit(ctx->expression());
     }
 
-    std::any call_func(callable callinfo, std::vector<int> args) {
+    std::any call_func(callable callinfo, std::vector<int> args)
+    {
         auto compstm = callinfo.executable;
         auto params = callinfo.params;
         size_t i = 0;
-        for (auto param: params){
-            memory[param] = args[i++];
-        }
         if (compstm)
-            return visit(compstm);
-        std::string name = params[0];
-        if (name == "print") {
-            for (auto arg: args) {
-                std::cout << arg << " ";
+        {
+            for (auto param : params)
+            {
+                memory[param] = args[i++];
             }
-            std::cout << std::endl;
+            return visit(compstm);
+        }
+        std::string name = params[0];
+        if (name == "print")
+        {
+            size_t n = args.size();
+            if (n > 0) {
+                console += std::to_string(args[0]);
+                for (i = 1; i < n; i++)
+                    console += " " + std::to_string(args[i]);
+            }
             return args.front();
-        } else {
+        }
+        else if (name == "println")
+        {
+            size_t n = args.size();
+            if (n > 0) {
+                console += std::to_string(args[0]);
+                for (i = 1; i < n; i++)
+                    console += " " + std::to_string(args[i]);
+            }
+            console += "\n";
+            return args.front();
+        }
+        else
+        {
             return defaultResult();
         }
     }
@@ -97,14 +122,18 @@ public:
     virtual std::any visitPostExpr(gramParser::PostExprContext *ctx) override
     {
         VISIT("PostExpr")
-        if (ctx->children.size() > 1) {
+        if (ctx->children.size() > 1)
+        {
             std::vector<int> args;
-            if (ctx->arg_list()){
+            if (ctx->arg_list())
+            {
                 args = std::any_cast<std::vector<int>>(visit(ctx->arg_list()));
             }
             callable caller = std::any_cast<callable>(visit(ctx->primExp()));
             return call_func(caller, args);
-        } else {
+        }
+        else
+        {
             return visit(ctx->primExp());
         }
     }
@@ -114,7 +143,8 @@ public:
         VISIT("Arg_list")
         auto addExprs = ctx->addExpr();
         std::vector<int> operands;
-        for (auto expr: addExprs) {
+        for (auto expr : addExprs)
+        {
             operands.push_back(std::any_cast<int>(visit(expr)));
         }
         return operands;
@@ -133,11 +163,15 @@ public:
         std::sort(operators.begin(), operators.end(), byIndex);
 
         int res = std::any_cast<int>(visit(postExpr[0]));
-        for (size_t i = 1; i < n/2+1; i++){
-            auto op = std::any_cast<antlr4::Token *>(visit(operators[i-1]));
-            if (op->getType() == gramParser::MUL){
+        for (size_t i = 1; i < n / 2 + 1; i++)
+        {
+            auto op = std::any_cast<antlr4::Token *>(visit(operators[i - 1]));
+            if (op->getType() == gramParser::MUL)
+            {
                 res *= std::any_cast<int>(visit(postExpr[i]));
-            } else {
+            }
+            else
+            {
                 res /= std::any_cast<int>(visit(postExpr[i]));
             }
         }
@@ -158,11 +192,15 @@ public:
         std::sort(operators.begin(), operators.end(), byIndex);
 
         int res = std::any_cast<int>(visit(mulExprs[0]));
-        for (size_t i = 1; i < n/2+1; i++){
-            auto op = std::any_cast<antlr4::Token *>(visit(operators[i-1]));
-            if (op->getType() == gramParser::ADD){
+        for (size_t i = 1; i < n / 2 + 1; i++)
+        {
+            auto op = std::any_cast<antlr4::Token *>(visit(operators[i - 1]));
+            if (op->getType() == gramParser::ADD)
+            {
                 res += std::any_cast<int>(visit(mulExprs[i]));
-            } else {
+            }
+            else
+            {
                 res -= std::any_cast<int>(visit(mulExprs[i]));
             }
         }
@@ -175,7 +213,8 @@ public:
         VISIT("Expression")
         auto addExprs = ctx->addExpr();
         std::vector<int> operands;
-        for (auto expr: addExprs) {
+        for (auto expr : addExprs)
+        {
             int val = std::any_cast<int>(visit(expr));
             operands.push_back(val);
         }
@@ -184,9 +223,9 @@ public:
 
     virtual std::any visitProgram(gramParser::ProgramContext *ctx) override
     {
-       VISIT("Program")
+        VISIT("Program")
         visitChildren(ctx);
-        return &res;
+        return &console;
     }
 
     virtual std::any visitStatement_list(gramParser::Statement_listContext *ctx) override
@@ -195,7 +234,8 @@ public:
         size_t n = ctx->children.size();
         for (size_t i = 0; i < n; i++)
         {
-            if (ctx->statement(i)->retstm()) {
+            if (ctx->statement(i)->retstm())
+            {
                 return visit(ctx->statement(i)->retstm());
             }
             std::any childResult = ctx->children[i]->accept(this);
@@ -224,10 +264,12 @@ public:
         std::string funcname = ctx->ID()->getText();
         std::cout << "funcname: " << funcname << std::endl;
         auto params = std::vector<std::string>();
-        if (ctx->param_list()){
+        if (ctx->param_list())
+        {
             params = std::any_cast<std::vector<std::string>>(visit(ctx->param_list()));
             std::cout << "prams: ";
-            for (auto param: params) {
+            for (auto param : params)
+            {
                 std::cout << param << " ";
             }
             std::cout << std::endl;
@@ -241,7 +283,8 @@ public:
         VISIT("Param_list")
         auto params = ctx->ID();
         std::vector<std::string> names;
-        for (auto param: params) {
+        for (auto param : params)
+        {
             names.push_back(param->getText());
         }
         return names;

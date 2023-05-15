@@ -16,12 +16,7 @@ int main()
     }
 
     Gram grm;
-    res = grm.eval("func f(x,y) { a = x + y; c = a * z; return c - a; } z = 2 * 4; b = f(z, 3); print(12, b);");
-    i = 0;
-    for (auto var: res)
-    {
-        std::cout << i << ":" << var << std::endl;
-        i++;
-    }
+    std::string console = grm.eval("func f(x,y) { a = x + y; c = a * z; return c - a; } z = 2 * 4; b = f(z, 3); println(z, b); print(f(z, 3));");
+    std::cout << console << std::endl;
     return 0;
 }

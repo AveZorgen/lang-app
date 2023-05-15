@@ -10,7 +10,7 @@
 #include "gramUserVisitor.h"
 
 
-std::vector<int> Gram::eval(std::string expression)
+std::string Gram::eval(std::string expression)
 {
     std::stringstream stream(expression);
     antlr4::ANTLRInputStream input(stream);
@@ -19,5 +19,5 @@ std::vector<int> Gram::eval(std::string expression)
     gramParser parser(&tokens);
     gramUserVisitor visitor;
     visitor.visit(parser.program());
-    return visitor.res;
+    return visitor.console;
 }

@@ -5,5 +5,5 @@
 
 class Gram {
 public:
-    std::vector<int> eval(std::string expression);
+    std::string eval(std::string expression);
 };
