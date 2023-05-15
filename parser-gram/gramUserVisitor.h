@@ -26,38 +26,13 @@ private:
 
 public:
     std::vector<int> res;
-    std::stack<int> stk;
     std::map<std::string, int> memory;
     std::map<std::string, callable> functable;
-
-    // std::any visitChildren(antlr4::tree::ParseTree *node) override
-    // {
-    //     std::cout << "HELO" << std::endl;
-    //     std::any result = defaultResult();
-    //     size_t n = node->children.size();
-    //     for (size_t i = 0; i < n; i++)
-    //     {
-    //         if (!shouldVisitNextChild(node, result))
-    //         {
-    //             break;
-    //         }
-    //         std::cout << node->toString() << std::endl;
-    //         std::any childResult = node->children[i]->accept(this);
-    //         result = aggregateResult(std::move(result), std::move(childResult));
-    //     }
-
-    //     return result;
-    // }
 
     std::any visitTerminal(antlr4::tree::TerminalNode *node) override
     {
         std::cout << "Terminal " << node->getSymbol()->toString() << std::endl;
         return node->getSymbol();
-    }
-
-    std::any aggregateResult(std::any /*aggregate*/, std::any nextResult) override
-    {
-        return nextResult;
     }
 
     virtual std::any visitPrimExp(gramParser::PrimExpContext *ctx) override
@@ -69,7 +44,7 @@ public:
             std::cout << "NUMBER: " << ctx_val->getText() << std::endl;
             return std::stoi(ctx_val->getText());
         }
-        else if (ctx_val = ctx->ID()) // либо функция либо переменная
+        else if (ctx_val = ctx->ID())
         {
             std::string text = ctx_val->getText();
             std::cout << "ID: " << text << std::endl;
@@ -78,20 +53,39 @@ public:
             } else {
                 return memory[text];
             }
-        } 
+        }
+        else if (ctx_val = ctx->PREDEF())
+        {
+            std::string text = ctx_val->getText();
+            std::cout << "PREDEF: " << text << std::endl;
+            if (!functable.count(text)) {
+                std::vector<std::string> params {text};
+                functable.insert({text, {nullptr, params}});
+            }
+            return functable[text];
+        }
         return visit(ctx->expression());
     }
 
     std::any call_func(callable callinfo, std::vector<int> args) {
-        // auto callinfo = functable[func_name];
         auto compstm = callinfo.executable;
         auto params = callinfo.params;
         size_t i = 0;
         for (auto param: params){
             memory[param] = args[i++];
         }
-         
-        return visit(compstm);
+        if (compstm)
+            return visit(compstm);
+        std::string name = params[0];
+        if (name == "print") {
+            for (auto arg: args) {
+                std::cout << arg << " ";
+            }
+            std::cout << std::endl;
+            return args.front();
+        } else {
+            return defaultResult();
+        }
     }
 
     virtual std::any visitPostExpr(gramParser::PostExprContext *ctx) override

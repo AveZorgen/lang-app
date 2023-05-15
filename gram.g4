@@ -1,6 +1,7 @@
 grammar gram;
 
-primExp: '(' expression ')' 
+primExp: '(' expression ')'
+	| PREDEF
     | ID
     | NUMBER
     ;
@@ -38,7 +39,7 @@ exprstm: expression? ';';
 
 retstm: 'return' expression? ';';
 
-
+PREDEF: OUT | IN;
 ID: [a-zA-Z_][a-zA-Z0-9_]*;
 NUMBER: '-'? [0-9]+ ('.' [0-9]+)?;
 MUL: '*';
@@ -46,6 +47,8 @@ DIV: '/';
 ADD: '+';
 SUB: '-';
 COM: ',';
+OUT: 'print';
+IN: 'input';
 
 Whitespace
     :   [ \t]+
